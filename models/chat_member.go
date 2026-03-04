@@ -105,7 +105,7 @@ func (c *ChatMember) MarshalJSON() ([]byte, error) {
 
 // ChatMemberOwner https://core.telegram.org/bots/api#chatmemberowner
 type ChatMemberOwner struct {
-	Status      ChatMemberType `json:"status"` // The member's status in the chat, always “creator”
+	Status      ChatMemberType `json:"status"` // The member's status in the chat, always "creator"
 	User        *User          `json:"user"`
 	IsAnonymous bool           `json:"is_anonymous"`
 	CustomTitle string         `json:"custom_title,omitempty"`
@@ -113,7 +113,7 @@ type ChatMemberOwner struct {
 
 // ChatMemberAdministrator https://core.telegram.org/bots/api#chatmemberadministrator
 type ChatMemberAdministrator struct {
-	Status                  ChatMemberType `json:"status"` // The member's status in the chat, always “administrator”
+	Status                  ChatMemberType `json:"status"` // The member's status in the chat, always "administrator"
 	User                    User           `json:"user"`
 	CanBeEdited             bool           `json:"can_be_edited"`
 	IsAnonymous             bool           `json:"is_anonymous"`
@@ -138,15 +138,15 @@ type ChatMemberAdministrator struct {
 
 // ChatMemberMember https://core.telegram.org/bots/api#chatmembermember
 type ChatMemberMember struct {
-	Status    ChatMemberType `json:”status”` // The member's status in the chat, always “member”
-	User      *User          `json:”user”`
-	UntilDate int            `json:”until_date,omitempty”`
-	Tag       string         `json:”tag,omitempty”`
+	Status    ChatMemberType `json:"status"` // The member's status in the chat, always "member"
+	User      *User          `json:"user"`
+	UntilDate int            `json:"until_date,omitempty"`
+	Tag       string         `json:"tag,omitempty"`
 }
 
 // ChatMemberRestricted https://core.telegram.org/bots/api#chatmemberrestricted
 type ChatMemberRestricted struct {
-	Status                ChatMemberType `json:"status"` // The member's status in the chat, always “restricted”
+	Status                ChatMemberType `json:"status"` // The member's status in the chat, always "restricted"
 	User                  *User          `json:"user"`
 	IsMember              bool           `json:"is_member"`
 	CanSendMessages       bool           `json:"can_send_messages"`
@@ -170,13 +170,13 @@ type ChatMemberRestricted struct {
 
 // ChatMemberLeft https://core.telegram.org/bots/api#chatmemberleft
 type ChatMemberLeft struct {
-	Status ChatMemberType `json:"status"` // The member's status in the chat, always “left”
+	Status ChatMemberType `json:"status"` // The member's status in the chat, always "left"
 	User   *User          `json:"user"`
 }
 
 // ChatMemberBanned https://core.telegram.org/bots/api#chatmemberbanned
 type ChatMemberBanned struct {
-	Status    ChatMemberType `json:"status"` // The member's status in the chat, always “kicked”
+	Status    ChatMemberType `json:"status"` // The member's status in the chat, always "kicked"
 	User      *User          `json:"user"`
 	UntilDate int            `json:"until_date"`
 }
