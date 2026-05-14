@@ -186,6 +186,16 @@ type Message struct {
 	VoiceChatParticipantsInvited  *VoiceChatParticipantsInvited  `json:"voice_chat_participants_invited,omitempty"`
 	WebAppData                    *WebAppData                    `json:"web_app_data,omitempty"`
 	ReplyMarkup                   *InlineKeyboardMarkup          `json:"reply_markup,omitempty"`
+
+	// Bot API 9.6
+	ManagedBotCreated *ManagedBotCreated `json:"managed_bot_created,omitempty"`
+
+	// Bot API 10.0
+	LivePhoto              *LivePhoto `json:"live_photo,omitempty"`
+	GuestQueryID           string     `json:"guest_query_id,omitempty"`
+	GuestBotCallerUser     *User      `json:"guest_bot_caller_user,omitempty"`
+	GuestBotCallerChat     *Chat      `json:"guest_bot_caller_chat,omitempty"`
+	ReplyToPollOptionID    string     `json:"reply_to_poll_option_id,omitempty"`
 }
 
 // PreparedInlineMessage https://core.telegram.org/bots/api#preparedinlinemessage

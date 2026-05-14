@@ -118,8 +118,15 @@ func buildRequestForm(form *multipart.Writer, params any) (int, error) {
 }
 
 func addFormFieldInputFileUpload(form *multipart.Writer, fieldName string, value *models.InputFileUpload) error {
-	if value.Data == nil || reflect.ValueOf(value.Data).IsNil() {
+	if value.Data == nil {
 		return fmt.Errorf("nil data for field %s", fieldName)
+	}
+	rv := reflect.ValueOf(value.Data)
+	switch rv.Kind() {
+	case reflect.Chan, reflect.Func, reflect.Map, reflect.Pointer, reflect.UnsafePointer, reflect.Interface, reflect.Slice:
+		if rv.IsNil() {
+			return fmt.Errorf("nil data for field %s", fieldName)
+		}
 	}
 	w, errCreateField := form.CreateFormFile(fieldName, value.Filename)
 	if errCreateField != nil {

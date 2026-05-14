@@ -14,6 +14,22 @@ import (
 	"strings"
 )
 
+// isNilParams reports whether the params argument carries no payload. It is
+// safe for both untyped nil interfaces and typed nil pointers (the common case
+// from generated method wrappers such as GetMe(ctx) which forwards a literal
+// nil), and tolerates non-nilable kinds without panicking.
+func isNilParams(params any) bool {
+	if params == nil {
+		return true
+	}
+	v := reflect.ValueOf(params)
+	switch v.Kind() {
+	case reflect.Chan, reflect.Func, reflect.Map, reflect.Pointer, reflect.UnsafePointer, reflect.Interface, reflect.Slice:
+		return v.IsNil()
+	}
+	return false
+}
+
 type apiResponse struct {
 	OK          bool            `json:"ok"`
 	Result      json.RawMessage `json:"result,omitempty"`
@@ -30,7 +46,7 @@ func (b *Bot) rawRequest(ctx context.Context, method string, params any, dest an
 	form := multipart.NewWriter(pw)
 
 	go func() {
-		if params != nil && !reflect.ValueOf(params).IsNil() {
+		if !isNilParams(params) {
 			_, errFormData := buildRequestForm(form, params)
 			if errFormData != nil {
 				if errClose := pw.CloseWithError(fmt.Errorf("error build request form for method %s, %w", method, errFormData)); errClose != nil {
@@ -38,15 +54,21 @@ func (b *Bot) rawRequest(ctx context.Context, method string, params any, dest an
 				}
 				return
 			}
-
-			errFormClose := form.Close()
-			if errFormClose != nil {
-				if errClose := pw.CloseWithError(fmt.Errorf("error form close for method %s, %w", method, errFormClose)); errClose != nil {
-					b.errorsHandler(fmt.Errorf("error close pipe writer for method %s, %w", method, errClose))
-				}
-				return
-			}
 		}
+
+		// Always close the multipart writer so that it emits the closing
+		// boundary. Without it, requests for parameterless methods (getMe,
+		// deleteWebhook, etc.) ship a multipart Content-Type with a zero-byte
+		// body — some Telegram backends, including the official one and the
+		// self-hosted server, respond with an empty body which surfaces as
+		// "unexpected end of JSON input" (issues #220, #224, #236).
+		if errFormClose := form.Close(); errFormClose != nil {
+			if errClose := pw.CloseWithError(fmt.Errorf("error form close for method %s, %w", method, errFormClose)); errClose != nil {
+				b.errorsHandler(fmt.Errorf("error close pipe writer for method %s, %w", method, errClose))
+			}
+			return
+		}
+
 		if errClose := pw.Close(); errClose != nil {
 			b.errorsHandler(fmt.Errorf("error close pipe writer for method %s, %w", method, errClose))
 		}

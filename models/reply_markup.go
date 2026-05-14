@@ -58,16 +58,17 @@ type ReplyKeyboardMarkup struct {
 
 // KeyboardButton https://core.telegram.org/bots/api#keyboardbutton
 type KeyboardButton struct {
-	Text              string                      `json:"text"`
-	IconCustomEmojiID string                      `json:"icon_custom_emoji_id,omitempty"`
-	Style             string                      `json:"style,omitempty"`
-	RequestUser     *KeyboardButtonRequestUser  `json:"request_user,omitempty"`
-	RequestUsers    *KeyboardButtonRequestUsers `json:"request_users,omitempty"`
-	RequestChat     *KeyboardButtonRequestChat  `json:"request_chat,omitempty"`
-	RequestContact  bool                        `json:"request_contact,omitempty"`
-	RequestLocation bool                        `json:"request_location,omitempty"`
-	RequestPoll     *KeyboardButtonPollType     `json:"request_poll,omitempty"`
-	WebApp          *WebAppInfo                 `json:"web_app,omitempty"`
+	Text                string                           `json:"text"`
+	IconCustomEmojiID   string                           `json:"icon_custom_emoji_id,omitempty"`
+	Style               string                           `json:"style,omitempty"`
+	RequestUser         *KeyboardButtonRequestUser       `json:"request_user,omitempty"`
+	RequestUsers        *KeyboardButtonRequestUsers      `json:"request_users,omitempty"`
+	RequestChat         *KeyboardButtonRequestChat       `json:"request_chat,omitempty"`
+	RequestManagedBot   *KeyboardButtonRequestManagedBot `json:"request_managed_bot,omitempty"` // Bot API 9.6
+	RequestContact      bool                             `json:"request_contact,omitempty"`
+	RequestLocation     bool                             `json:"request_location,omitempty"`
+	RequestPoll         *KeyboardButtonPollType          `json:"request_poll,omitempty"`
+	WebApp              *WebAppInfo                      `json:"web_app,omitempty"`
 }
 
 // KeyboardButtonRequestUser https://core.telegram.org/bots/api#keyboardbuttonrequestuser

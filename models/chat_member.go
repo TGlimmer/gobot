@@ -163,6 +163,7 @@ type ChatMemberRestricted struct {
 	CanInviteUsers        bool           `json:"can_invite_users"`
 	CanPinMessages        bool           `json:"can_pin_messages"`
 	CanManageTopics       bool           `json:"can_manage_topics,omitempty"`
+	CanReactToMessages    bool           `json:"can_react_to_messages,omitempty"` // Bot API 10.0
 	CanEditTag            bool           `json:"can_edit_tag,omitempty"`
 	UntilDate             int            `json:"until_date"`
 	Tag                   string         `json:"tag,omitempty"`

@@ -101,14 +101,32 @@ func New(token string, options ...Option) (*Bot, error) {
 	return b, nil
 }
 
-// ID returns the bot ID
+// ID returns the bot ID parsed from the token prefix. It returns 0 if the
+// token is malformed; this preserves the original signature for callers that
+// don't care about diagnostics. Use IDOrErr if you need to distinguish a real
+// id from a parse failure (issue #277).
 func (b *Bot) ID() int64 {
-	id, err := strconv.ParseInt(strings.Split(b.token, ":")[0], 10, 64)
-	if err != nil {
-		return 0
-	}
-
+	id, _ := b.IDOrErr()
 	return id
+}
+
+// IDOrErr returns the bot ID parsed from the token prefix together with a
+// non-nil error if the token is empty or does not start with a numeric id
+// followed by ':'. This is the variant to use when the caller needs to react
+// to misconfiguration instead of silently treating the bot as id 0.
+func (b *Bot) IDOrErr() (int64, error) {
+	if b.token == "" {
+		return 0, fmt.Errorf("bot token is empty")
+	}
+	prefix, _, ok := strings.Cut(b.token, ":")
+	if !ok {
+		return 0, fmt.Errorf("malformed bot token: missing ':' separator")
+	}
+	id, err := strconv.ParseInt(prefix, 10, 64)
+	if err != nil {
+		return 0, fmt.Errorf("malformed bot token: id prefix is not numeric: %w", err)
+	}
+	return id, nil
 }
 
 // SetToken sets the bot token

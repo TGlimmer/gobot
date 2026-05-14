@@ -1166,3 +1166,77 @@ func (b *Bot) SetChatMemberTag(ctx context.Context, params *SetChatMemberTagPara
 	err := b.rawRequest(ctx, "setChatMemberTag", params, &result)
 	return result, err
 }
+
+// --- Bot API 9.6 ------------------------------------------------------------
+
+// GetManagedBotToken https://core.telegram.org/bots/api#getmanagedbottoken — Bot API 9.6
+func (b *Bot) GetManagedBotToken(ctx context.Context, params *GetManagedBotTokenParams) (string, error) {
+	var result string
+	err := b.rawRequest(ctx, "getManagedBotToken", params, &result)
+	return result, err
+}
+
+// ReplaceManagedBotToken https://core.telegram.org/bots/api#replacemanagedbottoken — Bot API 9.6
+func (b *Bot) ReplaceManagedBotToken(ctx context.Context, params *ReplaceManagedBotTokenParams) (string, error) {
+	var result string
+	err := b.rawRequest(ctx, "replaceManagedBotToken", params, &result)
+	return result, err
+}
+
+// SavePreparedKeyboardButton https://core.telegram.org/bots/api#savepreparedkeyboardbutton — Bot API 9.6
+func (b *Bot) SavePreparedKeyboardButton(ctx context.Context, params *SavePreparedKeyboardButtonParams) (*models.PreparedKeyboardButton, error) {
+	result := &models.PreparedKeyboardButton{}
+	err := b.rawRequest(ctx, "savePreparedKeyboardButton", params, result)
+	return result, err
+}
+
+// --- Bot API 10.0 -----------------------------------------------------------
+
+// AnswerGuestQuery https://core.telegram.org/bots/api#answerguestquery — Bot API 10.0
+func (b *Bot) AnswerGuestQuery(ctx context.Context, params *AnswerGuestQueryParams) (*models.SentGuestMessage, error) {
+	result := &models.SentGuestMessage{}
+	err := b.rawRequest(ctx, "answerGuestQuery", params, result)
+	return result, err
+}
+
+// DeleteAllMessageReactions https://core.telegram.org/bots/api#deleteallmessagereactions — Bot API 10.0
+func (b *Bot) DeleteAllMessageReactions(ctx context.Context, params *DeleteAllMessageReactionsParams) (bool, error) {
+	var result bool
+	err := b.rawRequest(ctx, "deleteAllMessageReactions", params, &result)
+	return result, err
+}
+
+// DeleteMessageReaction https://core.telegram.org/bots/api#deletemessagereaction — Bot API 10.0
+func (b *Bot) DeleteMessageReaction(ctx context.Context, params *DeleteMessageReactionParams) (bool, error) {
+	var result bool
+	err := b.rawRequest(ctx, "deleteMessageReaction", params, &result)
+	return result, err
+}
+
+// GetManagedBotAccessSettings https://core.telegram.org/bots/api#getmanagedbotaccesssettings — Bot API 10.0
+func (b *Bot) GetManagedBotAccessSettings(ctx context.Context, params *GetManagedBotAccessSettingsParams) (*models.BotAccessSettings, error) {
+	result := &models.BotAccessSettings{}
+	err := b.rawRequest(ctx, "getManagedBotAccessSettings", params, result)
+	return result, err
+}
+
+// SetManagedBotAccessSettings https://core.telegram.org/bots/api#setmanagedbotaccesssettings — Bot API 10.0
+func (b *Bot) SetManagedBotAccessSettings(ctx context.Context, params *SetManagedBotAccessSettingsParams) (bool, error) {
+	var result bool
+	err := b.rawRequest(ctx, "setManagedBotAccessSettings", params, &result)
+	return result, err
+}
+
+// GetUserPersonalChatMessages https://core.telegram.org/bots/api#getuserpersonalchatmessages — Bot API 10.0
+func (b *Bot) GetUserPersonalChatMessages(ctx context.Context, params *GetUserPersonalChatMessagesParams) ([]*models.Message, error) {
+	var result []*models.Message
+	err := b.rawRequest(ctx, "getUserPersonalChatMessages", params, &result)
+	return result, err
+}
+
+// SendLivePhoto https://core.telegram.org/bots/api#sendlivephoto — Bot API 10.0
+func (b *Bot) SendLivePhoto(ctx context.Context, params *SendLivePhotoParams) (*models.Message, error) {
+	result := &models.Message{}
+	err := b.rawRequest(ctx, "sendLivePhoto", params, result)
+	return result, err
+}

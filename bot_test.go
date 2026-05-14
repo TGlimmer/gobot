@@ -377,6 +377,36 @@ func TestBot_ID(t *testing.T) {
 	}
 }
 
+// Issue #277: IDOrErr must surface malformed-token cases instead of silently
+// returning 0 the way ID() does for backwards compatibility.
+func TestBot_IDOrErr(t *testing.T) {
+	tests := []struct {
+		name    string
+		token   string
+		want    int64
+		wantErr bool
+	}{
+		{name: "empty token", token: "", want: 0, wantErr: true},
+		{name: "no colon", token: "xxx", want: 0, wantErr: true},
+		{name: "non-numeric prefix", token: "123xxx:xxx", want: 0, wantErr: true},
+		{name: "empty prefix", token: ":xxx", want: 0, wantErr: true},
+		{name: "ok", token: "123456:xxx", want: 123456, wantErr: false},
+		{name: "two colon", token: "123456:5678:xxx", want: 123456, wantErr: false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			b := &Bot{token: tt.token}
+			got, err := b.IDOrErr()
+			if (err != nil) != tt.wantErr {
+				t.Fatalf("IDOrErr() err = %v, wantErr=%v", err, tt.wantErr)
+			}
+			if got != tt.want {
+				t.Fatalf("IDOrErr() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
 func TestBot_Token(t *testing.T) {
 	b := &Bot{token: "123456:xxx"}
 

@@ -373,36 +373,53 @@ type SendContactParams struct {
 }
 
 // SendPollParams https://core.telegram.org/bots/api#sendpoll
+//
+// Bot API 9.6: CorrectOptionIDs replaces the single-value CorrectOptionID for
+// quiz polls (quizzes may now have multiple correct answers). The legacy
+// field is preserved with omitempty so existing call sites that set it still
+// compile, but new code should use CorrectOptionIDs.
 type SendPollParams struct {
-	BusinessConnectionID  string                   `json:"business_connection_id,omitempty"`
-	ChatID                any                      `json:"chat_id"`
-	MessageThreadID       int                      `json:"message_thread_id,omitempty"`
-	Question              string                   `json:"question"`
-	QuestionParseMode     models.ParseMode         `json:"question_parse_mode,omitempty"`
-	QuestionEntities      []models.MessageEntity   `json:"question_entities,omitempty"`
-	Options               []models.InputPollOption `json:"options"`
-	IsAnonymous           *bool                    `json:"is_anonymous,omitempty"`
-	Type                  string                   `json:"type,omitempty"`
-	AllowsMultipleAnswers bool                     `json:"allows_multiple_answers,omitempty"`
-	CorrectOptionID       int                      `json:"correct_option_id"`
-	Explanation           string                   `json:"explanation,omitempty"`
-	ExplanationParseMode  string                   `json:"explanation_parse_mode,omitempty"`
-	ExplanationEntities   []models.MessageEntity   `json:"explanation_entities,omitempty"`
-	OpenPeriod            int                      `json:"open_period,omitempty"`
-	CloseDate             int                      `json:"close_date,omitempty"`
-	IsClosed              bool                     `json:"is_closed,omitempty"`
-	DisableNotification   bool                     `json:"disable_notification,omitempty"`
-	ProtectContent        bool                     `json:"protect_content,omitempty"`
-	AllowPaidBroadcast    bool                     `json:"allow_paid_broadcast,omitempty"`
-	MessageEffectID       string                   `json:"message_effect_id,omitempty"`
-	ReplyParameters       *models.ReplyParameters  `json:"reply_parameters,omitempty"`
-	ReplyMarkup           models.ReplyMarkup       `json:"reply_markup,omitempty"`
+	BusinessConnectionID   string                   `json:"business_connection_id,omitempty"`
+	ChatID                 any                      `json:"chat_id"`
+	MessageThreadID        int                      `json:"message_thread_id,omitempty"`
+	Question               string                   `json:"question"`
+	QuestionParseMode      models.ParseMode         `json:"question_parse_mode,omitempty"`
+	QuestionEntities       []models.MessageEntity   `json:"question_entities,omitempty"`
+	Options                []models.InputPollOption `json:"options"`
+	IsAnonymous            *bool                    `json:"is_anonymous,omitempty"`
+	Type                   string                   `json:"type,omitempty"`
+	AllowsMultipleAnswers  bool                     `json:"allows_multiple_answers,omitempty"`
+	CorrectOptionID        int                      `json:"correct_option_id,omitempty"` // Deprecated in 9.6, use CorrectOptionIDs
+	CorrectOptionIDs       []int                    `json:"correct_option_ids,omitempty"`        // Bot API 9.6
+	AllowsRevoting         bool                     `json:"allows_revoting,omitempty"`            // Bot API 9.6
+	ShuffleOptions         bool                     `json:"shuffle_options,omitempty"`            // Bot API 9.6
+	AllowAddingOptions     bool                     `json:"allow_adding_options,omitempty"`       // Bot API 9.6
+	HideResultsUntilCloses bool                     `json:"hide_results_until_closes,omitempty"`  // Bot API 9.6
+	Description            string                   `json:"description,omitempty"`                // Bot API 9.6
+	DescriptionParseMode   models.ParseMode         `json:"description_parse_mode,omitempty"`     // Bot API 9.6
+	DescriptionEntities    []models.MessageEntity   `json:"description_entities,omitempty"`       // Bot API 9.6
+	CountryCodes           []string                 `json:"country_codes,omitempty"`              // Bot API 9.6
+	Explanation            string                   `json:"explanation,omitempty"`
+	ExplanationParseMode   string                   `json:"explanation_parse_mode,omitempty"`
+	ExplanationEntities    []models.MessageEntity   `json:"explanation_entities,omitempty"`
+	ExplanationMedia       *models.InputPollMedia   `json:"explanation_media,omitempty"` // Bot API 10.0
+	Media                  *models.InputPollMedia   `json:"media,omitempty"`             // Bot API 10.0
+	MembersOnly            bool                     `json:"members_only,omitempty"`      // Bot API 10.0
+	OpenPeriod             int                      `json:"open_period,omitempty"`
+	CloseDate              int                      `json:"close_date,omitempty"`
+	IsClosed               bool                     `json:"is_closed,omitempty"`
+	DisableNotification    bool                     `json:"disable_notification,omitempty"`
+	ProtectContent         bool                     `json:"protect_content,omitempty"`
+	AllowPaidBroadcast     bool                     `json:"allow_paid_broadcast,omitempty"`
+	MessageEffectID        string                   `json:"message_effect_id,omitempty"`
+	ReplyParameters        *models.ReplyParameters  `json:"reply_parameters,omitempty"`
+	ReplyMarkup            models.ReplyMarkup       `json:"reply_markup,omitempty"`
 }
 
 // SendChecklistParams https://core.telegram.org/bots/api#sendchecklist
 type SendChecklistParams struct {
 	BusinessConnectionID string                  `json:"business_connection_id,omitempty"`
-	ChatID               int                     `json:"chat_id"`
+	ChatID               int64                   `json:"chat_id"`
 	Checklist            models.InputChecklist   `json:"checklist"`
 	DisableNotification  bool                    `json:"disable_notification,omitempty"`
 	ProtectContent       bool                    `json:"protect_content,omitempty"`
@@ -509,13 +526,13 @@ type SetChatAdministratorCustomTitleParams struct {
 }
 
 type BanChatSenderChatParams struct {
-	ChatID       any `json:"chat_id"`
-	SenderChatID int `json:"sender_chat_id"`
+	ChatID       any   `json:"chat_id"`
+	SenderChatID int64 `json:"sender_chat_id"`
 }
 
 type UnbanChatSenderChatParams struct {
-	ChatID       any `json:"chat_id"`
-	SenderChatID int `json:"sender_chat_id"`
+	ChatID       any   `json:"chat_id"`
+	SenderChatID int64 `json:"sender_chat_id"`
 }
 
 type SetChatPermissionsParams struct {
@@ -616,7 +633,8 @@ type GetChatParams struct {
 }
 
 type GetChatAdministratorsParams struct {
-	ChatID any `json:"chat_id"`
+	ChatID     any  `json:"chat_id"`
+	ReturnBots bool `json:"return_bots,omitempty"` // Bot API 10.0
 }
 
 type GetChatMemberCountParams struct {
@@ -815,7 +833,7 @@ type EditMessageMediaParams struct {
 // EditMessageChecklistParams https://core.telegram.org/bots/api#editmessagechecklist
 type EditMessageChecklistParams struct {
 	BusinessConnectionID string                `json:"business_connection_id,omitempty"`
-	ChatID               int                   `json:"chat_id,omitempty"`
+	ChatID               int64                 `json:"chat_id,omitempty"`
 	MessageID            int                   `json:"message_id,omitempty"`
 	Checklist            models.InputChecklist `json:"checklist"`
 	ReplyMarkup          models.ReplyMarkup    `json:"reply_markup,omitempty"`
@@ -838,14 +856,14 @@ type StopPollParams struct {
 
 // ApproveSuggestedPostParams https://core.telegram.org/bots/api#approvesuggestedpost
 type ApproveSuggestedPostParams struct {
-	ChatID    int `json:"chat_id"`
-	MessageID int `json:"message_id"`
-	SendDate  int `json:"send_date,omitempty"`
+	ChatID    int64 `json:"chat_id"`
+	MessageID int   `json:"message_id"`
+	SendDate  int   `json:"send_date,omitempty"`
 }
 
 // DeclineSuggestedPostParams https://core.telegram.org/bots/api#declinesuggestedpost
 type DeclineSuggestedPostParams struct {
-	ChatID    int    `json:"chat_id"`
+	ChatID    int64  `json:"chat_id"`
 	MessageID int    `json:"message_id"`
 	Comment   string `json:"comment,omitempty"`
 }
@@ -1146,7 +1164,7 @@ type RemoveChatVerificationParams struct {
 // ReadBusinessMessageParams https://core.telegram.org/bots/api#readbusinessmessage
 type ReadBusinessMessageParams struct {
 	BusinessConnectionID string `json:"business_connection_id"`
-	ChatID               int    `json:"chat_id"`
+	ChatID               int64  `json:"chat_id"`
 	MessageID            int    `json:"message_id"`
 }
 
@@ -1239,7 +1257,7 @@ type UpgradeGiftParams struct {
 type TransferGiftParams struct {
 	BusinessConnectionID string `json:"business_connection_id"`
 	OwnedGiftID          string `json:"owned_gift_id"`
-	NewOwnerChatID       int    `json:"new_owner_chat_id"`
+	NewOwnerChatID       int64  `json:"new_owner_chat_id"`
 	StarCount            int    `json:"star_count"`
 }
 
@@ -1335,4 +1353,89 @@ type SetChatMemberTagParams struct {
 	ChatID any    `json:"chat_id" rules:"required,chat_id"`
 	UserID int64  `json:"user_id" rules:"required"`
 	Tag    string `json:"tag,omitempty"`
+}
+
+// --- Bot API 9.6 ------------------------------------------------------------
+
+// GetManagedBotTokenParams https://core.telegram.org/bots/api#getmanagedbottoken — Bot API 9.6
+type GetManagedBotTokenParams struct {
+	UserID int64 `json:"user_id"`
+}
+
+// ReplaceManagedBotTokenParams https://core.telegram.org/bots/api#replacemanagedbottoken — Bot API 9.6
+type ReplaceManagedBotTokenParams struct {
+	UserID int64 `json:"user_id"`
+}
+
+// SavePreparedKeyboardButtonParams https://core.telegram.org/bots/api#savepreparedkeyboardbutton — Bot API 9.6
+type SavePreparedKeyboardButtonParams struct {
+	Button         models.KeyboardButton `json:"button"`
+	AllowUserChats bool                  `json:"allow_user_chats,omitempty"`
+	AllowBotChats  bool                  `json:"allow_bot_chats,omitempty"`
+	AllowGroupChats bool                 `json:"allow_group_chats,omitempty"`
+	AllowChannelChats bool               `json:"allow_channel_chats,omitempty"`
+}
+
+// --- Bot API 10.0 -----------------------------------------------------------
+
+// AnswerGuestQueryParams https://core.telegram.org/bots/api#answerguestquery — Bot API 10.0
+type AnswerGuestQueryParams struct {
+	GuestQueryID         string                  `json:"guest_query_id"`
+	Text                 string                  `json:"text,omitempty"`
+	ParseMode            models.ParseMode        `json:"parse_mode,omitempty"`
+	Entities             []models.MessageEntity  `json:"entities,omitempty"`
+	LinkPreviewOptions   *models.LinkPreviewOptions `json:"link_preview_options,omitempty"`
+	ReplyParameters      *models.ReplyParameters `json:"reply_parameters,omitempty"`
+	ReplyMarkup          models.ReplyMarkup      `json:"reply_markup,omitempty"`
+}
+
+// DeleteAllMessageReactionsParams https://core.telegram.org/bots/api#deleteallmessagereactions — Bot API 10.0
+type DeleteAllMessageReactionsParams struct {
+	ChatID    any `json:"chat_id"`
+	MessageID int `json:"message_id"`
+}
+
+// DeleteMessageReactionParams https://core.telegram.org/bots/api#deletemessagereaction — Bot API 10.0
+type DeleteMessageReactionParams struct {
+	ChatID    any                 `json:"chat_id"`
+	MessageID int                 `json:"message_id"`
+	Reaction  *models.ReactionType `json:"reaction"`
+}
+
+// GetManagedBotAccessSettingsParams https://core.telegram.org/bots/api#getmanagedbotaccesssettings — Bot API 10.0
+type GetManagedBotAccessSettingsParams struct {
+	UserID int64 `json:"user_id"`
+}
+
+// SetManagedBotAccessSettingsParams https://core.telegram.org/bots/api#setmanagedbotaccesssettings — Bot API 10.0
+type SetManagedBotAccessSettingsParams struct {
+	UserID   int64                    `json:"user_id"`
+	Settings models.BotAccessSettings `json:"settings"`
+}
+
+// GetUserPersonalChatMessagesParams https://core.telegram.org/bots/api#getuserpersonalchatmessages — Bot API 10.0
+type GetUserPersonalChatMessagesParams struct {
+	UserID int64 `json:"user_id"`
+	Offset int   `json:"offset,omitempty"`
+	Limit  int   `json:"limit,omitempty"`
+}
+
+// SendLivePhotoParams https://core.telegram.org/bots/api#sendlivephoto — Bot API 10.0
+type SendLivePhotoParams struct {
+	BusinessConnectionID  string                  `json:"business_connection_id,omitempty"`
+	ChatID                any                     `json:"chat_id"`
+	MessageThreadID       int                     `json:"message_thread_id,omitempty"`
+	DirectMessagesTopicID int                     `json:"direct_messages_topic_id,omitempty"`
+	LivePhoto             models.InputFile        `json:"live_photo"`
+	Caption               string                  `json:"caption,omitempty"`
+	ParseMode             models.ParseMode        `json:"parse_mode,omitempty"`
+	CaptionEntities       []models.MessageEntity  `json:"caption_entities,omitempty"`
+	ShowCaptionAboveMedia bool                    `json:"show_caption_above_media,omitempty"`
+	HasSpoiler            bool                    `json:"has_spoiler,omitempty"`
+	DisableNotification   bool                    `json:"disable_notification,omitempty"`
+	ProtectContent        bool                    `json:"protect_content,omitempty"`
+	AllowPaidBroadcast    bool                    `json:"allow_paid_broadcast,omitempty"`
+	MessageEffectID       string                  `json:"message_effect_id,omitempty"`
+	ReplyParameters       *models.ReplyParameters `json:"reply_parameters,omitempty"`
+	ReplyMarkup           models.ReplyMarkup      `json:"reply_markup,omitempty"`
 }

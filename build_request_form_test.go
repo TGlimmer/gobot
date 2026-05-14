@@ -130,3 +130,45 @@ Content-Disposition: form-data; name="input_sticker_slice"
 	assertEqualInt(t, fieldsCount, 7)
 	assertFormData(t, buf.String(), expect)
 }
+
+// structReader is an io.Reader implemented on a struct value (no pointer
+// receiver). This mirrors stdlib types like multipart.sectionReadCloser that
+// are returned by (*multipart.FileHeader).Open() for small in-memory parts.
+// Issue #274: addFormFieldInputFileUpload used to panic for such readers
+// because reflect.Value.IsNil() rejects non-nilable kinds.
+type structReader struct {
+	r *strings.Reader
+}
+
+func (s structReader) Read(p []byte) (int, error) { return s.r.Read(p) }
+
+func Test_buildRequestForm_StructReader_Issue274(t *testing.T) {
+	params := struct {
+		InputFileUpload *models.InputFileUpload `json:"input_file_upload"`
+	}{
+		InputFileUpload: &models.InputFileUpload{
+			Filename: "file.png",
+			Data:     structReader{r: strings.NewReader("payload")},
+		},
+	}
+
+	buf := bytes.NewBuffer(nil)
+	form := multipart.NewWriter(buf)
+	form.SetBoundary("XXX")
+
+	defer func() {
+		if r := recover(); r != nil {
+			t.Fatalf("buildRequestForm panicked on struct-valued io.Reader: %v", r)
+		}
+	}()
+
+	if _, err := buildRequestForm(form, &params); err != nil {
+		t.Fatalf("buildRequestForm returned error: %v", err)
+	}
+	if err := form.Close(); err != nil {
+		t.Fatalf("form.Close: %v", err)
+	}
+	if !strings.Contains(buf.String(), "payload") {
+		t.Fatalf("expected payload in form body, got:\n%s", buf.String())
+	}
+}

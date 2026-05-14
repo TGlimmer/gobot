@@ -53,22 +53,30 @@ type ChatAdministratorRights struct {
 }
 
 // ChatPermissions https://core.telegram.org/bots/api#chatpermissions
+//
+// Issue #271: fields are pointers so callers can distinguish "leave the
+// permission untouched" (nil) from "explicitly deny" (&false) and "explicitly
+// allow" (&true). With plain bool + omitempty, false was indistinguishable from
+// unset and silently dropped from the wire payload, which meant
+// `CanSendOtherMessages: true` paired with `CanSendMessages: false` actually
+// granted text-send permission on the server side.
 type ChatPermissions struct {
-	CanSendMessages       bool `json:"can_send_messages,omitempty"`
-	CanSendAudios         bool `json:"can_send_audios"`
-	CanSendDocuments      bool `json:"can_send_documents"`
-	CanSendPhotos         bool `json:"can_send_photos"`
-	CanSendVideos         bool `json:"can_send_videos"`
-	CanSendVideoNotes     bool `json:"can_send_video_notes"`
-	CanSendVoiceNotes     bool `json:"can_send_voice_notes"`
-	CanSendPolls          bool `json:"can_send_polls,omitempty"`
-	CanSendOtherMessages  bool `json:"can_send_other_messages,omitempty"`
-	CanAddWebPagePreviews bool `json:"can_add_web_page_previews,omitempty"`
-	CanChangeInfo         bool `json:"can_change_info,omitempty"`
-	CanInviteUsers        bool `json:"can_invite_users,omitempty"`
-	CanPinMessages        bool `json:"can_pin_messages,omitempty"`
-	CanManageTopics       bool `json:"can_manage_topics,omitempty"`
-	CanEditTag            bool `json:"can_edit_tag,omitempty"`
+	CanSendMessages       *bool `json:"can_send_messages,omitempty"`
+	CanSendAudios         *bool `json:"can_send_audios,omitempty"`
+	CanSendDocuments      *bool `json:"can_send_documents,omitempty"`
+	CanSendPhotos         *bool `json:"can_send_photos,omitempty"`
+	CanSendVideos         *bool `json:"can_send_videos,omitempty"`
+	CanSendVideoNotes     *bool `json:"can_send_video_notes,omitempty"`
+	CanSendVoiceNotes     *bool `json:"can_send_voice_notes,omitempty"`
+	CanSendPolls          *bool `json:"can_send_polls,omitempty"`
+	CanSendOtherMessages  *bool `json:"can_send_other_messages,omitempty"`
+	CanAddWebPagePreviews *bool `json:"can_add_web_page_previews,omitempty"`
+	CanChangeInfo         *bool `json:"can_change_info,omitempty"`
+	CanInviteUsers        *bool `json:"can_invite_users,omitempty"`
+	CanPinMessages        *bool `json:"can_pin_messages,omitempty"`
+	CanManageTopics       *bool `json:"can_manage_topics,omitempty"`
+	CanReactToMessages    *bool `json:"can_react_to_messages,omitempty"` // Bot API 10.0
+	CanEditTag            *bool `json:"can_edit_tag,omitempty"`
 }
 
 // ChatLocation https://core.telegram.org/bots/api#chatlocation

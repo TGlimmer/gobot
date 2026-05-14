@@ -26,6 +26,8 @@ type Update struct {
 	ChatJoinRequest         *ChatJoinRequest             `json:"chat_join_request,omitempty"`
 	ChatBoost               *ChatBoostUpdated            `json:"chat_boost,omitempty"`
 	RemovedChatBoost        *ChatBoostRemoved            `json:"removed_chat_boost,omitempty"`
+	ManagedBot              *ManagedBotUpdated           `json:"managed_bot,omitempty"`   // Bot API 9.6
+	GuestMessage            *Message                     `json:"guest_message,omitempty"` // Bot API 10.0
 }
 
 // allowed_updates https://core.telegram.org/bots/api#update
@@ -53,4 +55,6 @@ const (
 	AllowedUpdateChatJoinRequest         string = "chat_join_request"
 	AllowedUpdateChatBoost               string = "chat_boost"
 	AllowedUpdateRemovedChatBoost        string = "removed_chat_boost"
+	AllowedUpdateManagedBot              string = "managed_bot"   // Bot API 9.6
+	AllowedUpdateGuestMessage            string = "guest_message" // Bot API 10.0
 )
