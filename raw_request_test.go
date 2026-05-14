@@ -26,6 +26,24 @@ func (c *clientMock) Do(req *http.Request) (*http.Response, error) {
 	return &resp, nil
 }
 
+type clientCaptureMock struct {
+	method      string
+	contentType string
+	body        []byte
+}
+
+func (c *clientCaptureMock) Do(req *http.Request) (*http.Response, error) {
+	c.method = req.Method
+	c.contentType = req.Header.Get("Content-Type")
+	if req.Body != nil && req.Body != http.NoBody {
+		c.body, _ = io.ReadAll(req.Body)
+	}
+	return &http.Response{
+		StatusCode: 200,
+		Body:       io.NopCloser(strings.NewReader(`{"ok":true}`)),
+	}, nil
+}
+
 func Test_rawRequest_url(t *testing.T) {
 	cm := &clientMock{}
 	b := &Bot{
@@ -62,39 +80,64 @@ func Test_rawRequest_url_testEnv(t *testing.T) {
 }
 
 // Issues #220, #224, #236: parameterless methods (GetMe, DeleteWebhook, ...)
-// were shipping a multipart Content-Type with an empty body, which both the
-// official Telegram backend and self-hosted bot API server reject with an
-// empty response (surfaced as "unexpected end of JSON input"). The multipart
-// writer must always emit a closing boundary, even when params is nil.
-func Test_rawRequest_nilParams_writesClosingBoundary(t *testing.T) {
-	cm := &clientMock{}
+// must not be wrapped in multipart. A zero-part multipart payload
+// (\r\n--boundary--\r\n) is technically valid per RFC 2046 but the official
+// Telegram backend and the self-hosted bot API server respond to it with an
+// empty body, surfaced upstream as "unexpected end of JSON input". When
+// params is nil the request is now sent as a bodyless POST with no
+// Content-Type, which Telegram accepts.
+func Test_rawRequest_nilParams_bodylessPost(t *testing.T) {
+	cm := &clientCaptureMock{}
 	b := &Bot{token: "XXX", client: cm}
 
 	if err := b.rawRequest(context.Background(), "getMe", nil, nil); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if len(cm.body) == 0 {
-		t.Fatalf("expected non-empty body with closing multipart boundary, got empty body")
+	if len(cm.body) != 0 {
+		t.Fatalf("expected empty body, got %d bytes: %q", len(cm.body), cm.body)
 	}
-	// A finalized multipart body always ends with "--<boundary>--\r\n".
-	if !bytes.HasSuffix(cm.body, []byte("--\r\n")) {
-		t.Fatalf("expected body to end with closing multipart boundary, got:\n%q", cm.body)
+	if cm.contentType != "" {
+		t.Fatalf("expected no Content-Type for parameterless request, got %q", cm.contentType)
+	}
+	if cm.method != http.MethodPost {
+		t.Fatalf("expected POST, got %s", cm.method)
 	}
 }
 
 // Same path as the above but with a typed-nil pointer (the shape callers hit
 // via wrappers like DeleteWebhook(ctx, nil)). reflect.ValueOf on a typed nil
 // pointer is not the same as on an untyped nil interface, so guard both.
-func Test_rawRequest_typedNilParams_writesClosingBoundary(t *testing.T) {
-	cm := &clientMock{}
+func Test_rawRequest_typedNilParams_bodylessPost(t *testing.T) {
+	cm := &clientCaptureMock{}
 	b := &Bot{token: "XXX", client: cm}
 
 	var params *DeleteWebhookParams // typed nil
 	if err := b.rawRequest(context.Background(), "deleteWebhook", params, nil); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if !bytes.HasSuffix(cm.body, []byte("--\r\n")) {
-		t.Fatalf("expected body to end with closing multipart boundary, got:\n%q", cm.body)
+	if len(cm.body) != 0 {
+		t.Fatalf("expected empty body for typed-nil params, got %d bytes: %q", len(cm.body), cm.body)
+	}
+	if cm.contentType != "" {
+		t.Fatalf("expected no Content-Type, got %q", cm.contentType)
+	}
+}
+
+// With real params, the request still goes through the multipart path with
+// the proper Content-Type and a non-empty body.
+func Test_rawRequest_withParams_multipart(t *testing.T) {
+	cm := &clientCaptureMock{}
+	b := &Bot{token: "XXX", client: cm}
+
+	params := &SendMessageParams{ChatID: int64(42), Text: "hello"}
+	if err := b.rawRequest(context.Background(), "sendMessage", params, nil); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !bytes.HasPrefix([]byte(cm.contentType), []byte("multipart/form-data; boundary=")) {
+		t.Fatalf("expected multipart Content-Type, got %q", cm.contentType)
+	}
+	if !bytes.Contains(cm.body, []byte("hello")) {
+		t.Fatalf("expected body to contain payload, got: %q", cm.body)
 	}
 }

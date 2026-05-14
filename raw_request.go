@@ -42,38 +42,6 @@ type apiResponse struct {
 }
 
 func (b *Bot) rawRequest(ctx context.Context, method string, params any, dest any) error {
-	pr, pw := io.Pipe()
-	form := multipart.NewWriter(pw)
-
-	go func() {
-		if !isNilParams(params) {
-			_, errFormData := buildRequestForm(form, params)
-			if errFormData != nil {
-				if errClose := pw.CloseWithError(fmt.Errorf("error build request form for method %s, %w", method, errFormData)); errClose != nil {
-					b.errorsHandler(fmt.Errorf("error close pipe writer for method %s, %w", method, errClose))
-				}
-				return
-			}
-		}
-
-		// Always close the multipart writer so that it emits the closing
-		// boundary. Without it, requests for parameterless methods (getMe,
-		// deleteWebhook, etc.) ship a multipart Content-Type with a zero-byte
-		// body — some Telegram backends, including the official one and the
-		// self-hosted server, respond with an empty body which surfaces as
-		// "unexpected end of JSON input" (issues #220, #224, #236).
-		if errFormClose := form.Close(); errFormClose != nil {
-			if errClose := pw.CloseWithError(fmt.Errorf("error form close for method %s, %w", method, errFormClose)); errClose != nil {
-				b.errorsHandler(fmt.Errorf("error close pipe writer for method %s, %w", method, errClose))
-			}
-			return
-		}
-
-		if errClose := pw.Close(); errClose != nil {
-			b.errorsHandler(fmt.Errorf("error close pipe writer for method %s, %w", method, errClose))
-		}
-	}()
-
 	u := b.url + "/bot" + b.token + "/"
 	if b.testEnvironment {
 		u += "test/"
@@ -85,17 +53,61 @@ func (b *Bot) rawRequest(ctx context.Context, method string, params any, dest an
 		b.debugHandler("request url: %s, payload: %s", strings.Replace(u, b.token, "***", 1), requestDebugData)
 	}
 
-	req, errRequest := http.NewRequestWithContext(ctx, http.MethodPost, u, pr)
-	if errRequest != nil {
-		return fmt.Errorf("error create request for method %s, %w", method, errRequest)
-	}
+	var req *http.Request
+	var pr *io.PipeReader
 
-	req.Header.Add("Content-Type", form.FormDataContentType())
+	// Parameterless methods (getMe, deleteWebhook(nil), getWebhookInfo, logout,
+	// close, ...) must not be wrapped in multipart: a zero-part multipart body
+	// (\r\n--boundary--\r\n) is what the official Telegram backend and the
+	// self-hosted bot API server respond to with an empty body, surfacing as
+	// "unexpected end of JSON input" (issues #220, #224, #236). Telegram is
+	// fine with a bodyless POST for these methods.
+	if isNilParams(params) {
+		var errRequest error
+		req, errRequest = http.NewRequestWithContext(ctx, http.MethodPost, u, http.NoBody)
+		if errRequest != nil {
+			return fmt.Errorf("error create request for method %s, %w", method, errRequest)
+		}
+	} else {
+		var pw *io.PipeWriter
+		pr, pw = io.Pipe()
+		form := multipart.NewWriter(pw)
+
+		go func() {
+			_, errFormData := buildRequestForm(form, params)
+			if errFormData != nil {
+				if errClose := pw.CloseWithError(fmt.Errorf("error build request form for method %s, %w", method, errFormData)); errClose != nil {
+					b.errorsHandler(fmt.Errorf("error close pipe writer for method %s, %w", method, errClose))
+				}
+				return
+			}
+
+			if errFormClose := form.Close(); errFormClose != nil {
+				if errClose := pw.CloseWithError(fmt.Errorf("error form close for method %s, %w", method, errFormClose)); errClose != nil {
+					b.errorsHandler(fmt.Errorf("error close pipe writer for method %s, %w", method, errClose))
+				}
+				return
+			}
+
+			if errClose := pw.Close(); errClose != nil {
+				b.errorsHandler(fmt.Errorf("error close pipe writer for method %s, %w", method, errClose))
+			}
+		}()
+
+		var errRequest error
+		req, errRequest = http.NewRequestWithContext(ctx, http.MethodPost, u, pr)
+		if errRequest != nil {
+			return fmt.Errorf("error create request for method %s, %w", method, errRequest)
+		}
+		req.Header.Add("Content-Type", form.FormDataContentType())
+	}
 
 	resp, errDo := b.client.Do(req)
 	if errDo != nil {
-		if errClose := pr.CloseWithError(errDo); errClose != nil {
-			b.errorsHandler(fmt.Errorf("error close pipe reader for method %s, %w", method, errClose))
+		if pr != nil {
+			if errClose := pr.CloseWithError(errDo); errClose != nil {
+				b.errorsHandler(fmt.Errorf("error close pipe reader for method %s, %w", method, errClose))
+			}
 		}
 		var netErr *url.Error
 		if errors.As(errDo, &netErr) {
